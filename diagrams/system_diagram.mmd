@@ -1,0 +1,31 @@
+flowchart TD
+    U([User types a request<br/>e.g. 'Buddy walk at 7:30']) --> G1{Input guardrails<br/>empty / too long / no pets}
+    G1 -- rejected --> UI
+    G1 -- ok --> A[Agent: Gemini parses text<br/>into structured tasks]
+    A --> V{Validator<br/>pet exists, HH:MM time,<br/>frequency, date}
+    V -- invalid task dropped --> LOG
+    V -- valid tasks --> H{{Human review<br/>Confirm or Cancel}}
+    H -- Cancel --> UI
+    H -- Confirm --> S[Scheduler: add tasks to pets<br/>sort, recurrence]
+    S --> C{Conflict check<br/>detect_conflicts}
+    C -- clash found --> R[Agent: Gemini proposes<br/>new times, max 3 rounds]
+    R --> V2{Validate new times}
+    V2 --> C
+    C -- no clashes --> UI[/Streamlit UI:<br/>daily schedule + agent trace/]
+    UI --> D[User marks tasks Done<br/>next recurrence queued]
+
+    LOG[(pawpal.log<br/>every step logged)]
+    A -.-> LOG
+    V -.-> LOG
+    C -.-> LOG
+    R -.-> LOG
+
+    T[[Testing: pytest with fake LLM<br/>covers parsing, validator, guardrails,<br/>conflict loop, human-approval gate]]
+    T -.tests.-> A
+    T -.tests.-> V
+    T -.tests.-> C
+
+    classDef human fill:#ffe9a8,stroke:#b8860b;
+    classDef test fill:#d6f5d6,stroke:#2e7d32;
+    class H,D human;
+    class T test;

@@ -39,13 +39,23 @@
 
 - The AI suggested a highly nested approach where the Scheduler directly accessed and manipulated individual task arrays inside the Pet instances by looping through them manually. I did not accept this suggestion. I evaluated it by comparing it against our system guidelines, and realized that the Scheduler should dynamically pull consolidated data from the Owner layer instead of managing individual pet objects directly. To verify my revised approach, I tested the code using test cases.
 
+**c. AI feature (PawPal+ AI Planner)**
+
+- **How I used AI:** I worked with Claude Code to plan the agent workflow (plan, validate, act, check), write the tests, and debug the Gemini integration. Full details are in [model_card.md](model_card.md).
+- **Suggestion I accepted:** splitting the work into a "propose" step and an "apply" step with a human Confirm/Cancel button between them. It is what lets a person catch bad AI output, like the model assigning "Give Rex a bath" to Buddy.
+- **Suggestion I rejected:** changing the prompt so the model answers `UNKNOWN` for pets that don't exist. I kept the behavior and documented it as a known limitation instead, because I considered it outside the scope of this project.
+- **What AI got wrong:** the first Gemini version capped output at 1000 tokens, so the model returned empty replies, and the first model name returned a 404. Unit tests with a fake model passed both times, so I only found them by running the real app and reading `pawpal.log`.
+- **Limitations:** conflict detection is exact-time only, the model can fill in details I didn't give it (such as `daily`), and the model reschedules without knowing the owner's real availability.
+- **Future improvements:** let the model return `UNKNOWN` for unfamiliar pets, add task durations so overlaps are detected, and grow `eval.py` into a larger set of real-model test prompts.
+
 ---
 
 ## 4. Testing and Verification
 
 **a. What you tested**
 
-- I tested four areas. One was the basics, like adding tasks and increasing the task count. I also tested sorting by time, recurrence (daily, weekly, and one-time), and conflict detection. These tests were important because sorting, conflict detection, and recurrence are the core of the program. If one of them is wrong, the owner would see a misleading plan.
+- For the AI planner, I added 7 agent tests with a fake LLM and an `eval.py` script that runs sample inputs against the real Gemini model.
+- For the scheduler, I tested four areas. One was the basics, like adding tasks and increasing the task count. I also tested sorting by time, recurrence (daily, weekly, and one-time), and conflict detection. These tests were important because sorting, conflict detection, and recurrence are the core of the program. If one of them is wrong, the owner would see a misleading plan.
 
 **b. Confidence**
 
